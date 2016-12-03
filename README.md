@@ -242,3 +242,129 @@ WHERE  publisher_id IN (
     
 );  
 ```
+
+# Problem 3
+
+Consider the following database of student enrollment in courses and books adopted for each course
+
+* Student (***regno***: string, name: string, major: string, bdate: date),
+* Course (***courseno***: int, cname: string, dept: string)
+* Enroll (***regno***: string, ***courseno***: int, sem: int, marks: int)
+* Text (***book-isbn***: int, book-title: string, publisher: string, author: string)
+* Book_Adoption (***courseno***: int, ***sem***: int, book-isbn: int)
+
+![p3_schema](./p3_schema.jpeg)
+
+## 1. Create the above tables by properly specifying the primary and foreign keys
+
+```sql
+CREATE TABLE Student (
+    regno   varchar2(10)   PRIMARY KEY,
+    name    varchar2(20),
+    major   varchar2(20),
+    bdate   date
+);
+```
+
+```sql
+CREATE TABLE Course (
+    courseno   number(6)      PRIMARY KEY,
+    cname      varchar2(10),
+    dept       varchar2(5)
+);
+```
+
+```sql
+CREATE TABLE Enroll (
+    regno      varchar2(10)   REFERENCES Student,
+    courseno   number(6)      REFERENCES Course,
+    sem        number(2),
+    marks      number(5),
+    
+    PRIMARY KEY(regno, courseno)
+);
+```
+
+```sql
+CREATE TABLE Text (
+    book_isbn    number(10)     PRIMARY KEY,
+    book_title   varchar2(20),
+    publisher    varchar2(20),
+    author       varchar2(20)
+);
+```
+
+```sql
+CREATE TABLE Book_Adoption (
+    courseno    number(6)    REFERENCES Course,
+    sem         number(2),
+    book_isbn   number(10)   REFERENCES Text,
+    
+    PRIMARY KEY(courseno, sem)
+);
+```
+
+## 2. Demonstrate how you add a new text book to the database and make this book be adopted by some department
+
+```sql
+INSERT INTO Text
+VALUES (
+    1007,
+    'FAFL',
+    'Pearson',
+    'Ulman'
+);
+```
+
+```sql
+INSERT INTO Book_Adoption
+VALUES (
+    002,
+    4,
+    1007
+);
+```
+
+## 3. Produce a list of text books in alphabetic order for the courses used by the CS department, that use more than two books.
+
+```sql
+SELECT Book_Adoption.courseno, Text.book_isbn, Text.book_title
+
+FROM   Text, Book_Adoption, Course
+
+WHERE  Text.book_isbn = Book_Adoption.book_isbn AND
+       Book_Adoption.courseno = Course.courseno AND
+       Course.dept=’CSE’ AND
+       Book_Adoption.courseno IN (
+
+           SELECT courseno
+ 		   FROM Book_Adoption
+ 		   GROUP BY courseno
+ 		   HAVING COUNT(*)>2
+
+       )
+
+ORDER BY Text.book_title;
+```
+
+## 4. List any department that has *all* its adopted books published by a specific publisher.
+
+```sql
+SELECT DISTINCT dept
+
+FROM   Course
+
+WHERE  courseno IN (
+
+     SELECT courseno
+     FROM   Book_Adoption
+     WHERE  book_isbn IN (
+
+         SELECT book_isbn
+         FROM   Text
+         WHERE  publisher = 'TMH'
+         
+     )
+
+);
+```
