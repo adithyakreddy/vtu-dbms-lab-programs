@@ -368,3 +368,239 @@ WHERE  courseno IN (
 
 );
 ```
+
+# Problem 2
+
+The following relations keep track of airline flight information:
+
+* Flights (no: integer, from: string, to: string, distance: integer, departs: time, arrives: time, price: real)
+* Aircraft (aid: integer, aname: string, cruisingrange: integer)
+* Certified (eid: integer, aid: integer)
+* Employee (eid: integer, ename: string, salary: integer)
+
+Note that the Employees relation describes pilots as well as other kinds of employees. Every pilot is certified for at least one aircraft, and only pilots are certified to fly.
+
+![p2_schema](./p2_schema.jpeg)
+
+## 1. Create the above tables by properly specifying the primary and foreign keys.
+
+```sql
+CREATE TABLE Flights (
+    fno        number(5)      PRIMARY KEY,
+    frm        varchar2(10),
+    to         varchar2(10),
+    distance   number(10),
+    departs    varchar2(10),
+    arrives    varchar2(10),
+    price      number(10, 2)
+);
+```
+
+```sql
+CREATE TABLE Aircraft (
+    aid             number(5)      PRIMARY KEY,
+    aname           varchar2(20),
+    cruisingrange   number(10)
+);
+```
+
+```sql
+CREATE TABLE Employee (
+    eid      number(5)      PRIMARY KEY,
+    ename    varchar2(20),
+    salary   number(6)
+);
+```
+
+```sql
+CREATE TABLE Certified (
+    eid   number(5)   REFERENCES Employee,
+    aid   number(5)   REFERENCES Aircraft,
+
+    PRIMARY KEY(eid, aid) 
+);
+```
+
+## 2. Find the names of aircraft where all the pilots certified to fly them have salaries greater than 80,000
+
+```sql
+
+```
+
+## 3. For each pilot who is certified for more than 3 aircraft, find the eid of the pilot, and the maximum cruising range among the aircraft for which he is certified
+
+```sql
+
+```
+
+## 4. Find the names of pilots whose salary is less than the price of the cheapest route from Bengaluru to Frankfurt
+
+```sql
+
+```
+
+## 5. Find the names of pilots certified for some Boeing aircraft
+
+```sql
+
+```
+
+## 6. Find the aids of all aircraft that can be used on routes from Bengaluru to New Delhi
+
+```sql
+
+```
+
+## 7. For all the aircraft with cruisingrange over 1000 km, find the name of the aircraft and the average salary of all pilots certified for this aircraft.
+
+```sql
+
+```
+
+# Problem 1
+
+Consider the following relations:
+
+* Student (snum: integer, sname: string, major: string, level: string, age: integer)
+* Faculty (fid: integer, fname: string, deptid: integer)
+* Class (cname: string, meets_at: string, room: string, fid: integer)
+* Enrolled (snum: integer, cname: string)
+
+## 1. Create the above relations while specifying primary and foreign keys.
+
+```sql
+CREATE TABLE Student (
+    snum     number(4)      PRIMARY KEY,
+    sname    varchar2(10),
+    major    varchar2(5),
+    slevel   varchar2(10),
+    age      number(3)
+);
+```
+
+
+```sql
+CREATE TABLE Faculty (
+    fid      number(4)      PRIMARY KEY,
+    fname    varchar2(10),
+    deptid   number(5)
+);
+```
+
+```sql
+CREATE TABLE Class (
+    cname      varchar2(4)    PRIMARY KEY,
+    meets_at   varchar2(10),
+    room       varchar2(10),
+    fid        number(4)      REFERENCES Faculty
+);
+```
+
+```sql
+CREATE TABLE Enrolled (
+    snum    number(4)     REFERENCES Student,
+    cname   varchar2(4)   REFERENCES Class,
+    
+    PRIMARY KEY(snum, cname)
+);
+```
+
+## 2. Find the names of all juniors who are enrolled in a class taught by Prof. Harshith
+
+```sql
+SELECT DISTINCT sname
+
+FROM   Student,
+       Class,
+       Enrolled,
+       Faculty
+
+WHERE  Faculty.fname = 'Harshith' AND
+       Faculty.fid = Class.fid AND
+       Class.cname = Enrolled.cname AND
+       Enrolled.snum = Student.snum AND
+       Student.slevel = 'JR';
+```
+
+## 3. Find the names of all classes that either meet in room R128 or have five or more students enrolled.
+
+```sql
+SELECT cname
+
+FROM   Class
+
+WHERE room = 'R128' OR
+      cname IN (
+
+          SELECT cname
+          FROM Enrolled
+          GROUP BY cname
+          HAVING COUNT(*) >= 5
+
+);
+```
+
+## 4. Find the names of all students who are enrolled in two classes that meet at the same time.
+
+```sql
+SELECT sname
+
+FROM   Student
+
+WHERE  snum IN (
+
+    SELECT snum
+    FROM   Enrolled
+    WHERE  cname in (
+
+        SELECT DISTINCT c1.cname
+        FROM   Class c1, Class c2
+        WHERE  c1.cname <> c2.cname AND
+               c1.meets_at = c2.meets_at
+
+    )
+
+);
+```
+
+## 5. Find the names of faculty members who teach in every room in which class is taught
+
+```sql
+SELECT fname
+
+FROM   Faculty
+
+WHERE  NOT EXISTS (
+
+    SELECT DISTINCT room
+    FROM   Class
+
+    MINUS
+
+    SELECT room
+    FROM   Class
+    WHERE  Class.fid = Faculty.fid
+
+);
+```
+
+## 6. Find the names of faculty members for whom the combined enrollment of the courses that they teach is less than five.
+
+```sql
+SELECT DISTINCT Faculty.fname
+
+FROM   Faculty,
+       Class,
+       Enrolled
+
+WHERE  Faculty.fid = Class.fid AND
+       Enrolled.cname = Class.cname AND
+       Class.fid in (
+
+           SELECT fid
+           FROM   Class
+           GROUP BY fid
+           HAVING COUNT(*) < 5
+
+);
+```
