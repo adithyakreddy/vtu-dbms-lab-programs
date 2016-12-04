@@ -424,37 +424,95 @@ CREATE TABLE Certified (
 ## 2. Find the names of aircraft where all the pilots certified to fly them have salaries greater than 80,000
 
 ```sql
+SELECT aname
 
+FROM   Aircraft,
+       Employee,
+       Certified
+
+WHERE  Aircraft.aid = Certified.aid AND
+       Employee.eid = Certified.eid AND
+       Employee.salary > 80000;
 ```
 
 ## 3. For each pilot who is certified for more than 3 aircraft, find the eid of the pilot, and the maximum cruising range among the aircraft for which he is certified
 
 ```sql
+SELECT Certified.eid, MAX(Aircraft.cruisingrange)
 
+FROM   Certified,
+       Aircraft
+
+WHERE  Certified.aid = Aircraft.aid
+
+GROUP BY Certified.eid
+
+HAVING COUNT(Certified.eid) > 3;
 ```
 
 ## 4. Find the names of pilots whose salary is less than the price of the cheapest route from Bengaluru to Frankfurt
 
 ```sql
+SELECT DISTINCT Employee.ename
 
+FROM Employee,
+     Certified
+
+WHERE Employee.eid = Certified.eid AND
+      Employee.salary < (
+
+          SELECT MIN(price)
+          FROM Flights
+          WHERE frm = 'Bangalore' AND
+                to = 'Frankfurt'
+
+);
 ```
 
 ## 5. Find the names of pilots certified for some Boeing aircraft
 
 ```sql
+SELECT DISTINCT Employee.ename
 
+FROM Employee,
+     Certified,
+     Aircraft
+
+WHERE Employee.eid = Certified.eid AND
+      Certified.aid = Aircraft.aid AND
+      Aircraft.aname LIKE 'Boe%';
 ```
 
 ## 6. Find the aids of all aircraft that can be used on routes from Bengaluru to New Delhi
 
 ```sql
+SELECT aid
 
+FROM   Aircraft
+
+WHERE cruisingrange >= (
+    
+    SELECT MIN(distance)
+    FROM   Flights
+    WHERE frm = 'Bangalore' AND
+          to = 'New Delhi'
+);
 ```
 
 ## 7. For all the aircraft with cruisingrange over 1000 km, find the name of the aircraft and the average salary of all pilots certified for this aircraft.
 
 ```sql
+SELECT Aircraft.aname, AVG(Employee.salary)
 
+FROM   Aircraft,
+       Certified,
+       Employee
+
+WHERE  Aircraft.aid = Certified.aid AND
+       Certified.eid = Employee.eid AND
+       Aircraft.cruisingrange > 1000
+
+GROUP BY Aircraft.aname;
 ```
 
 # Problem 1
