@@ -645,20 +645,19 @@ WHERE  NOT EXISTS (
 ## 6. Find the names of faculty members for whom the combined enrollment of the courses that they teach is less than five.
 
 ```sql
-SELECT DISTINCT Faculty.fname
+SELECT fname
 
-FROM   Faculty,
-       Class,
-       Enrolled
+FROM   Faculty
 
-WHERE  Faculty.fid = Class.fid AND
-       Enrolled.cname = Class.cname AND
-       Class.fid in (
+WHERE  fid IN (
 
-           SELECT fid
-           FROM   Class
-           GROUP BY fid
-           HAVING COUNT(*) < 5
+     SELECT fid
+     FROM   Class, Enrolled,
+     WHERE  Enrolled.cname = Class.cname AND
+            Class.fid = Faculty.fid
+
+     GROUP BY fid
+     HAVING COUNT(*) < 5
 
 );
 ```
